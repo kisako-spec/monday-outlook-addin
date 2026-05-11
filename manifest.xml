@@ -19,7 +19,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://REPLACE_WITH_YOUR_URL/taskpane.html"/>
+        <SourceLocation DefaultValue="https://kisako-spec.github.io/monday-outlook-addin/taskpane.html"/>
         <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
     </Form>
