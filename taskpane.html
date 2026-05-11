@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>monday.com Linker</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #fafafa; }
+        .card { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { font-size: 16px; color: #333; margin-top: 0; }
+        label { display: block; margin: 10px 0 5px; font-size: 12px; color: #666; font-weight: bold; }
+        select, button { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #c8d0d8; font-size: 14px; }
+        button { background: #0073ea; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.2s; }
+        button:hover { background: #005bb5; }
+        button:disabled { background: #cbd4e1; cursor: not-allowed; }
+        #status { margin-top: 15px; font-size: 12px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Küldés a monday-re</h2>
+        
+        <label>PROJEKT (BOARD)</label>
+        <select id="boardSelect" onchange="loadGroups()"><option>Betöltés...</option></select>
+
+        <label>CSOPORT (GROUP)</label>
+        <select id="groupSelect"><option>Válassz táblát...</option></select>
+
+        <button id="mainBtn" onclick="sendToMonday()">Létrehozás és Linkelés</button>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const API_KEY = eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY1NjYwNTU2NCwiYWFpIjoxMSwidWlkIjoxMDI2Mzg3NjQsImlhZCI6IjIwMjYtMDUtMTFUMDk6Mzk6MzMuODgzWiIsInBlciI6Im1lOndyaXRlIiwiYWN0aWQiOjM0ODA2ODMyLCJyZ24iOiJldWMxIn0.WA-r26Y342FgpVr6JX_8lwo6-waI9q-z-V2YBdSm5R4;
+        let emailInfo = {};
+
+        Office.onReady((info) => {
+            if (info.host === Office.HostType.Outlook) {
+                fetchBoards();
+                prepareEmailData();
+            }
+        });
+
+        function prepareEmailData() {
+            const item = Office.context.mailbox.item;
+            // Generálunk egy direkt linket az Outlook webes felületéhez
+            const encodedId = encodeURIComponent(item.itemId);
+            emailInfo = {
+                subject: item.subject,
+                link: `https://outlook.office.com/mail/deeplink?ItemID=${encodedId}`
+            };
+        }
+
+        async function fetchBoards() {
+            const query = '{ boards (limit: 50) { id name } }';
+            const res = await callMonday(query);
+            const select = document.getElementById('boardSelect');
+            select.innerHTML = '<option value="">-- Válassz --</option>';
+            res.data.boards.forEach(b => select.innerHTML += `<option value="${b.id}">${b.name}</option>`);
+        }
+
+        async function loadGroups() {
+            const boardId = document.getElementById('boardSelect').value;
+            if (!boardId) return;
+            const select = document.getElementById('groupSelect');
+            select.innerHTML = '<option>Betöltés...</option>';
+            
+            const query = `{ boards (ids: ${boardId}) { groups { id title } } }`;
+            const res = await callMonday(query);
+            select.innerHTML = "";
+            res.data.boards[0].groups.forEach(g => select.innerHTML += `<option value="${g.id}">${g.title}</option>`);
+        }
+
+        async function sendToMonday() {
+            const btn = document.getElementById('mainBtn');
+            const status = document.getElementById('status');
+            const boardId = document.getElementById('boardSelect').value;
+            const groupId = document.getElementById('groupSelect').value;
+
+            if(!boardId || !groupId) return alert("Válassz ki mindent!");
+
+            btn.disabled = true;
+            status.innerHTML = "⏳ Folyamatban...";
+
+            try {
+                // 1. Feladat létrehozása
+                const createQuery = `mutation { create_item (board_id: ${boardId}, group_id: "${groupId}", item_name: "${emailInfo.subject}") { id } }`;
+                const createRes = await callMonday(createQuery);
+                const itemId = createRes.data.create_item.id;
+
+                // 2. Link beírása az Update-be (ez a legbiztosabb helye)
+                const updateBody = `🔗 Eredeti email megtekintése: ${emailInfo.link}`;
+                const updateQuery = `mutation { create_update (item_id: ${itemId}, body: ${JSON.stringify(updateBody)}) { id } }`;
+                await callMonday(updateQuery);
+
+                status.innerHTML = "✅ Siker! A link a monday-en.";
+            } catch (e) {
+                status.innerHTML = "❌ Hiba történt.";
+                console.error(e);
+            }
+            btn.disabled = false;
+        }
+
+        async function callMonday(query) {
+            const r = await fetch("https://api.monday.com/v2", {
+                method: 'post',
+                headers: { 'Content-Type': 'application/json', 'Authorization': API_KEY },
+                body: JSON.stringify({ query })
+            });
+            return r.json();
+        }
+    </script>
+</body>
+</html>
