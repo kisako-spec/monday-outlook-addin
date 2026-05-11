@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8" />
+    <title>Bravogroup Monday Linker</title>
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; padding: 15px; background: #fafafa; }
@@ -28,14 +29,18 @@
         <select id="boardSelect" onchange="loadGroups()"><option>Betöltés...</option></select>
 
         <label>CSOPORT (GROUP)</label>
-        <select id="groupSelect"><option>Válassz táblát...</option></select>
+        <select id="groupSelect" onchange="loadItems()"><option>Válassz táblát...</option></select>
+
+        <label>SZÜLŐ FELADAT (SUBITEMHEZ - OPCIONÁLIS)</label>
+        <select id="itemSelect">
+            <option value="">-- Maradjon fő feladat --</option>
+        </select>
 
         <button id="mainBtn" onclick="sendToMonday()">Létrehozás és Linkelés</button>
         <div id="status"></div>
     </div>
 
     <script>
-        // AZ ÚJ API KULCSOD
         const API_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY1NjYwNTU2NCwiYWFpIjoxMSwidWlkIjoxMDI2Mzg3NjQsImlhZCI6IjIwMjYtMDUtMTFUMDk6Mzk6MzMuMDAwWiIsInBlciI6Im1lOndyaXRlIiwiYWN0aWQiOjM0ODA2ODMyLCJyZ24iOiJldWMxIn0.RyxQWrt6L4ZYwLfzRV_RTl-k46oUDHJhTnxD7b45W4o";
         let emailInfo = {};
 
@@ -66,18 +71,16 @@
             try {
                 const query = '{ boards (limit: 50) { id name } }';
                 const res = await callMonday(query);
-                
                 if (res.errors) {
                     status.innerHTML = `<span class="err-msg">API Hiba: ${res.errors[0].message}</span>`;
                     return;
                 }
-
                 const select = document.getElementById('boardSelect');
                 select.innerHTML = '<option value="">-- Válassz --</option>';
                 res.data.boards.forEach(b => select.innerHTML += `<option value="${b.id}">${b.name}</option>`);
                 status.innerHTML = "✅ Táblák betöltve.";
             } catch (e) {
-                status.innerHTML = `<span class="err-msg">Hiba: ${e.message}\nEllenőrizd az internetet/tűzfalat!</span>`;
+                status.innerHTML = `<span class="err-msg">Hiba: ${e.message}</span>`;
             }
         }
 
@@ -85,12 +88,33 @@
             const boardId = document.getElementById('boardSelect').value;
             if (!boardId) return;
             const select = document.getElementById('groupSelect');
+            const itemSelect = document.getElementById('itemSelect');
             select.innerHTML = '<option>Betöltés...</option>';
+            itemSelect.innerHTML = '<option value="">-- Maradjon fő feladat --</option>';
             
             const query = `{ boards (ids: ${boardId}) { groups { id title } } }`;
             const res = await callMonday(query);
-            select.innerHTML = "";
+            select.innerHTML = '<option value="">-- Válassz csoportot --</option>';
             res.data.boards[0].groups.forEach(g => select.innerHTML += `<option value="${g.id}">${g.title}</option>`);
+        }
+
+        // ÚJ FUNKCIÓ: Feladatok betöltése a szülő választóhoz
+        async function loadItems() {
+            const boardId = document.getElementById('boardSelect').value;
+            const groupId = document.getElementById('groupSelect').value;
+            if (!boardId || !groupId) return;
+
+            const select = document.getElementById('itemSelect');
+            select.innerHTML = '<option value="">Elemek betöltése...</option>';
+
+            const query = `{ boards (ids: ${boardId}) { groups (ids: "${groupId}") { items_page { items { id name } } } } }`;
+            const res = await callMonday(query);
+            
+            select.innerHTML = '<option value="">-- Maradjon fő feladat --</option>';
+            const items = res.data.boards[0].groups[0].items_page.items;
+            items.forEach(item => {
+                select.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+            });
         }
 
         async function sendToMonday() {
@@ -98,16 +122,27 @@
             const status = document.getElementById('status');
             const boardId = document.getElementById('boardSelect').value;
             const groupId = document.getElementById('groupSelect').value;
+            const parentItemId = document.getElementById('itemSelect').value;
 
-            if(!boardId || !groupId) return alert("Válassz ki mindent!");
+            if(!boardId || !groupId) return alert("Válassz ki legalább egy projektet és egy csoportot!");
 
             btn.disabled = true;
-            status.innerHTML = "⏳ Küldés...";
+            status.innerHTML = "⏳ Küldés folyamatban...";
 
             try {
-                const createQuery = `mutation { create_item (board_id: ${boardId}, group_id: "${groupId}", item_name: "${emailInfo.subject}") { id } }`;
+                let createQuery;
+                // LOGIKA: Ha van szülő, akkor subitemet hozunk létre, különben sima itemet
+                if (parentItemId) {
+                    createQuery = `mutation { create_subitem (parent_item_id: ${parentItemId}, item_name: "${emailInfo.subject}") { id } }`;
+                } else {
+                    createQuery = `mutation { create_item (board_id: ${boardId}, group_id: "${groupId}", item_name: "${emailInfo.subject}") { id } }`;
+                }
+
                 const itemRes = await callMonday(createQuery);
-                const itemId = itemRes.data.create_item.id;
+                
+                // Hibakezelés ha az API nem ad vissza ID-t
+                const newItem = parentItemId ? itemRes.data.create_subitem : itemRes.data.create_item;
+                const itemId = newItem.id;
 
                 const shortBody = emailInfo.body.substring(0, 2500);
                 const fullUpdateText = `🔗 Email link: ${emailInfo.link}\n\n--- TARTALOM ---\n${shortBody}`;
@@ -117,7 +152,8 @@
 
                 status.innerHTML = "✅ Sikeresen átküldve!";
             } catch (e) {
-                status.innerHTML = "❌ Hiba a küldéskor.";
+                status.innerHTML = "❌ Hiba a küldéskor. (Lehet, hogy a csoport üres?)";
+                console.error(e);
             }
             btn.disabled = false;
         }
