@@ -17,18 +17,26 @@
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>Küldés a monday-re</h2>
-        
-        <label>PROJEKT (BOARD)</label>
-        <select id="boardSelect" onchange="loadGroups()"><option>Betöltés...</option></select>
-
-        <label>CSOPORT (GROUP)</label>
-        <select id="groupSelect"><option>Válassz táblát...</option></select>
-
-        <button id="mainBtn" onclick="sendToMonday()">Létrehozás és Linkelés</button>
-        <div id="status"></div>
+   <div class="card">
+    <div class="logo-container">
+        <img src="Bravogroup.png" alt="Bravogroup" id="logo">
     </div>
+    
+    <h2>Küldés a monday-re</h2>
+    
+    <label>PROJEKT (BOARD)</label>
+    <select id="boardSelect" onchange="loadGroups()">
+        <option>Betöltés...</option>
+    </select>
+
+    <label>CSOPORT (GROUP)</label>
+    <select id="groupSelect">
+        <option>Válassz táblát...</option>
+    </select>
+
+    <button id="mainBtn" onclick="sendToMonday()">Létrehozás és Linkelés</button>
+    <div id="status"></div>
+</div>
 
     <script>
         const API_KEY = eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY1NjYwNTU2NCwiYWFpIjoxMSwidWlkIjoxMDI2Mzg3NjQsImlhZCI6IjIwMjYtMDUtMTFUMDk6Mzk6MzMuODgzWiIsInBlciI6Im1lOndyaXRlIiwiYWN0aWQiOjM0ODA2ODMyLCJyZ24iOiJldWMxIn0.WA-r26Y342FgpVr6JX_8lwo6-waI9q-z-V2YBdSm5R4;
