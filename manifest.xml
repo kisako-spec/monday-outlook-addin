@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="MailApp">
-  <Id>71234567-89ab-cdef-0123-456789abcdef</Id>
-  <Version>1.0.0.0</Version>
-  <ProviderName>AkosProject</ProviderName>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" 
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+           xsi:type="MailApp">
+  <Id>71234567-1234-1234-1234-1234567890ab</Id> <Version>1.0.0.0</Version>
+  <ProviderName>Akos RFID</ProviderName>
   <DefaultLocale>hu-HU</DefaultLocale>
   <DisplayName DefaultValue="Monday Linker"/>
-  <Description DefaultValue="Email küldése monday.com-ra linkkel."/>
+  <Description DefaultValue="Email beküldése a megfelelő monday projektbe linkkel."/>
+  <IconUrl DefaultValue=https://kisako-spec.github.io/monday-outlook-addin//>
   <Hosts>
     <Host Name="Mailbox" />
   </Hosts>
@@ -17,7 +19,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://FELHASZNALONEV.github.io/REPOSTORY-NEV/taskpane.html"/>
+        <SourceLocation DefaultValue="https://REPLACE_WITH_YOUR_URL/taskpane.html"/>
         <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
     </Form>
