@@ -5,8 +5,8 @@
     <title>Bravogroup Monday Linker</title>
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 15px; background: #fafafa; }
-        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', sans-serif; padding: 15px; background: #fafafa; display: flex; flex-direction: column; min-height: 90vh; }
+        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex-grow: 1; }
         .logo-container { text-align: center; margin-bottom: 15px; }
         #logo { max-width: 140px; height: auto; }
         h2 { font-size: 18px; color: #333; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px; }
@@ -16,6 +16,16 @@
         button:disabled { background: #ccc; }
         #status { margin-top: 15px; font-size: 12px; text-align: center; white-space: pre-wrap; }
         .err-msg { color: red; font-weight: bold; }
+        
+        /* Új stílus az aláíráshoz */
+        .footer-signature { 
+            font-size: 10px; 
+            color: #aaa; 
+            text-align: center; 
+            margin-top: 20px; 
+            font-weight: normal;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
@@ -40,7 +50,13 @@
         <div id="status"></div>
     </div>
 
+    <!-- Az aláírásod -->
+    <div class="footer-signature">
+        Flow & Code by Kisari
+    </div>
+
     <script>
+        // Az API kulcsot a kérésednek megfelelően benne hagytam
         const API_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY1NjYwNTU2NCwiYWFpIjoxMSwidWlkIjoxMDI2Mzg3NjQsImlhZCI6IjIwMjYtMDUtMTFUMDk6Mzk6MzMuMDAwWiIsInBlciI6Im1lOndyaXRlIiwiYWN0aWQiOjM0ODA2ODMyLCJyZ24iOiJldWMxIn0.RyxQWrt6L4ZYwLfzRV_RTl-k46oUDHJhTnxD7b45W4o";
         let emailInfo = {};
 
@@ -98,7 +114,6 @@
             res.data.boards[0].groups.forEach(g => select.innerHTML += `<option value="${g.id}">${g.title}</option>`);
         }
 
-        // ÚJ FUNKCIÓ: Feladatok betöltése a szülő választóhoz
         async function loadItems() {
             const boardId = document.getElementById('boardSelect').value;
             const groupId = document.getElementById('groupSelect').value;
@@ -131,7 +146,6 @@
 
             try {
                 let createQuery;
-                // LOGIKA: Ha van szülő, akkor subitemet hozunk létre, különben sima itemet
                 if (parentItemId) {
                     createQuery = `mutation { create_subitem (parent_item_id: ${parentItemId}, item_name: "${emailInfo.subject}") { id } }`;
                 } else {
@@ -139,8 +153,6 @@
                 }
 
                 const itemRes = await callMonday(createQuery);
-                
-                // Hibakezelés ha az API nem ad vissza ID-t
                 const newItem = parentItemId ? itemRes.data.create_subitem : itemRes.data.create_item;
                 const itemId = newItem.id;
 
