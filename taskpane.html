@@ -5,183 +5,467 @@
     <title>Bravogroup Monday Linker</title>
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 15px; background: #fafafa; display: flex; flex-direction: column; min-height: 90vh; }
-        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex-grow: 1; }
-        .logo-container { text-align: center; margin-bottom: 15px; }
-        #logo { max-width: 140px; height: auto; }
-        h2 { font-size: 18px; color: #333; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        label { display: block; margin: 10px 0 5px; font-size: 11px; color: #666; font-weight: bold; }
-        select, button { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #c8d0d8; font-size: 14px; margin-bottom: 10px; }
-        button { background: #0073ea; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        button:disabled { background: #ccc; }
-        #status { margin-top: 15px; font-size: 12px; text-align: center; white-space: pre-wrap; }
-        .err-msg { color: red; font-weight: bold; }
-        
-        /* Új stílus az aláíráshoz */
-        .footer-signature { 
-            font-size: 10px; 
-            color: #aaa; 
-            text-align: center; 
-            margin-top: 20px; 
-            font-weight: normal;
-            letter-spacing: 0.5px;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f5f7;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 12px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            flex-grow: 1;
+        }
+        .logo-container { text-align: center; margin-bottom: 14px; }
+        #logo { max-width: 130px; height: auto; }
+        h2 {
+            font-size: 16px;
+            color: #333;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 14px;
+            font-weight: 600;
+        }
+
+        .field-group { margin-bottom: 14px; position: relative; }
+        label {
+            display: block;
+            font-size: 10px;
+            color: #888;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 9px 32px 9px 10px;
+            border-radius: 5px;
+            border: 1px solid #c8d0d8;
+            font-size: 13px;
+            background: #fff;
+            color: #333;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .search-input:focus { border-color: #0073ea; }
+        .search-input:disabled { background: #f8f9fa; color: #aaa; cursor: not-allowed; }
+
+        .clear-btn {
+            position: absolute;
+            right: 8px;
+            top: 32px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #aaa;
+            font-size: 16px;
+            line-height: 1;
+            padding: 2px;
+            display: none;
+        }
+        .clear-btn:hover { color: #555; }
+
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0; right: 0;
+            background: #fff;
+            border: 1px solid #c8d0d8;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .dropdown-list.open { display: block; }
+        .dropdown-item {
+            padding: 8px 10px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #333;
+        }
+        .dropdown-item:hover, .dropdown-item.highlighted { background: #e8f0fe; }
+        .dropdown-item.empty { color: #aaa; font-style: italic; cursor: default; }
+        .dropdown-item.empty:hover { background: none; }
+
+        .send-btn {
+            width: 100%;
+            padding: 11px;
+            border-radius: 5px;
+            border: none;
+            background: #0073ea;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: background 0.15s;
+        }
+        .send-btn:hover:not(:disabled) { background: #0060c0; }
+        .send-btn:disabled { background: #b0c4de; cursor: not-allowed; }
+
+        #status {
+            margin-top: 12px;
+            font-size: 12px;
+            text-align: center;
+            white-space: pre-wrap;
+            min-height: 18px;
+        }
+        .err { color: #e44; font-weight: bold; }
+        .ok { color: #0a0; font-weight: bold; }
+        .info { color: #555; }
+
+        .footer-signature {
+            font-size: 10px;
+            color: #bbb;
+            text-align: center;
+            margin-top: 14px;
+            letter-spacing: 0.4px;
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <div class="logo-container">
-            <img src="Bravogroup.png" alt="Bravogroup" id="logo">
-        </div>
-        <h2>Küldés a monday-re</h2>
-        
+<div class="card">
+    <div class="logo-container">
+        <img src="Bravogroup.png" alt="Bravogroup" id="logo">
+    </div>
+    <h2>Küldés a monday-re</h2>
+
+    <div class="field-group" id="fg-workspace">
+        <label>MUNKATERÜLET (WORKSPACE)</label>
+        <input type="text" class="search-input" id="wsInput" placeholder="Keresés..." autocomplete="off" disabled>
+        <button class="clear-btn" id="wsClear" title="Törlés">✕</button>
+        <div class="dropdown-list" id="wsList"></div>
+    </div>
+
+    <div class="field-group" id="fg-board">
         <label>PROJEKT (BOARD)</label>
-        <select id="boardSelect" onchange="loadGroups()"><option>Betöltés...</option></select>
+        <input type="text" class="search-input" id="boardInput" placeholder="Először válassz munkaterületet..." autocomplete="off" disabled>
+        <button class="clear-btn" id="boardClear" title="Törlés">✕</button>
+        <div class="dropdown-list" id="boardList"></div>
+    </div>
 
+    <div class="field-group" id="fg-group">
         <label>CSOPORT (GROUP)</label>
-        <select id="groupSelect" onchange="loadItems()"><option>Válassz táblát...</option></select>
-
-        <label>SZÜLŐ FELADAT (SUBITEMHEZ - OPCIONÁLIS)</label>
-        <select id="itemSelect">
-            <option value="">-- Maradjon fő feladat --</option>
-        </select>
-
-        <button id="mainBtn" onclick="sendToMonday()">Létrehozás és Linkelés</button>
-        <div id="status"></div>
+        <input type="text" class="search-input" id="groupInput" placeholder="Először válassz boardot..." autocomplete="off" disabled>
+        <button class="clear-btn" id="groupClear" title="Törlés">✕</button>
+        <div class="dropdown-list" id="groupList"></div>
     </div>
 
-    <!-- Az aláírásod -->
-    <div class="footer-signature">
-        Flow & Code by Kisari
+    <div class="field-group" id="fg-item">
+        <label>SZÜLŐ FELADAT (OPCIONÁLIS)</label>
+        <input type="text" class="search-input" id="itemInput" placeholder="Keresés vagy hagyja üresen..." autocomplete="off" disabled>
+        <button class="clear-btn" id="itemClear" title="Törlés">✕</button>
+        <div class="dropdown-list" id="itemList"></div>
     </div>
 
-    <script>
-        // Az API kulcsot a kérésednek megfelelően benne hagytam
-        const API_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY1NjYwNTU2NCwiYWFpIjoxMSwidWlkIjoxMDI2Mzg3NjQsImlhZCI6IjIwMjYtMDUtMTFUMDk6Mzk6MzMuMDAwWiIsInBlciI6Im1lOndyaXRlIiwiYWN0aWQiOjM0ODA2ODMyLCJyZ24iOiJldWMxIn0.RyxQWrt6L4ZYwLfzRV_RTl-k46oUDHJhTnxD7b45W4o";
-        let emailInfo = {};
+    <button class="send-btn" id="mainBtn" onclick="sendToMonday()" disabled>Létrehozás és Linkelés</button>
+    <div id="status"><span class="info">Betöltés...</span></div>
+</div>
 
-        Office.onReady((info) => {
-            if (info.host === Office.HostType.Outlook) {
-                fetchBoards();
-                prepareEmailData();
+<div class="footer-signature">Flow &amp; Code by Kisari</div>
+
+<script>
+    const API_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY1NjYwNTU2NCwiYWFpIjoxMSwidWlkIjoxMDI2Mzg3NjQsImlhZCI6IjIwMjYtMDUtMTFUMDk6Mzk6MzMuMDAwWiIsInBlciI6Im1lOndyaXRlIiwiYWN0aWQiOjM0ODA2ODMyLCJyZ24iOiJldWMxIn0.RyxQWrt6L4ZYwLfzRV_RTl-k46oUDHJhTnxD7b45W4o";
+
+    let emailInfo = {};
+    let allWorkspaces = [];
+    let allBoards = [];
+    let allGroups = [];
+    let allItems = [];
+
+    let selWorkspace = null;
+    let selBoard = null;
+    let selGroup = null;
+    let selItem = null;
+
+    Office.onReady((info) => {
+        if (info.host === Office.HostType.Outlook) {
+            prepareEmailData();
+            fetchWorkspaces();
+        }
+    });
+
+    function prepareEmailData() {
+        const item = Office.context.mailbox.item;
+        const encodedId = encodeURIComponent(item.itemId);
+        emailInfo = {
+            subject: item.subject || "(nincs tárgy)",
+            link: `https://outlook.office.com/mail/deeplink?ItemID=${encodedId}`,
+            body: ""
+        };
+        item.body.getAsync(Office.CoercionType.Text, (result) => {
+            if (result.status === Office.AsyncResultStatus.Succeeded) {
+                emailInfo.body = result.value;
+            }
+        });
+    }
+
+    async function fetchWorkspaces() {
+        setStatus("info", "⏳ Munkaterületek betöltése...");
+        try {
+            const query = `{ workspaces { id name } }`;
+            const res = await callMonday(query);
+            if (res.errors) { setStatus("err", "API hiba: " + res.errors[0].message); return; }
+            allWorkspaces = res.data.workspaces;
+            setupDropdown("ws", allWorkspaces, onWorkspaceSelect);
+            setStatus("ok", "✅ Kész – válassz munkaterületet.");
+        } catch(e) {
+            setStatus("err", "❌ Hálózati hiba: " + e.message);
+        }
+    }
+
+    function onWorkspaceSelect(ws) {
+        selWorkspace = ws;
+        selBoard = selGroup = selItem = null;
+        clearInput("board"); clearInput("group"); clearInput("item");
+        disableInput("group"); disableInput("item");
+        document.getElementById("mainBtn").disabled = true;
+        setStatus("info", "⏳ Boardok betöltése...");
+        fetchBoards(ws.id);
+    }
+
+    async function fetchBoards(workspaceId) {
+        try {
+            const query = `{ boards (workspace_ids: ${workspaceId}, limit: 100) { id name } }`;
+            const res = await callMonday(query);
+            if (res.errors) { setStatus("err", "API hiba: " + res.errors[0].message); return; }
+            allBoards = res.data.boards;
+            setupDropdown("board", allBoards, onBoardSelect);
+            setStatus("ok", "✅ Boardok betöltve – válassz boardot.");
+        } catch(e) {
+            setStatus("err", "❌ Hiba: " + e.message);
+        }
+    }
+
+    function onBoardSelect(board) {
+        selBoard = board;
+        selGroup = selItem = null;
+        clearInput("group"); clearInput("item");
+        disableInput("item");
+        document.getElementById("mainBtn").disabled = true;
+        setStatus("info", "⏳ Csoportok betöltése...");
+        fetchGroups(board.id);
+    }
+
+    async function fetchGroups(boardId) {
+        try {
+            const query = `{ boards (ids: ${boardId}) { groups { id title } } }`;
+            const res = await callMonday(query);
+            if (res.errors) { setStatus("err", "API hiba: " + res.errors[0].message); return; }
+            allGroups = res.data.boards[0].groups.map(g => ({ id: g.id, name: g.title }));
+            setupDropdown("group", allGroups, onGroupSelect);
+            setStatus("ok", "✅ Csoportok betöltve – válassz csoportot.");
+        } catch(e) {
+            setStatus("err", "❌ Hiba: " + e.message);
+        }
+    }
+
+    function onGroupSelect(group) {
+        selGroup = group;
+        selItem = null;
+        clearInput("item");
+        document.getElementById("mainBtn").disabled = false;
+        setStatus("info", "⏳ Feladatok betöltése...");
+        fetchItems(selBoard.id, group.id);
+    }
+
+    async function fetchItems(boardId, groupId) {
+        try {
+            const query = `{ boards (ids: ${boardId}) { groups (ids: "${groupId}") { items_page { items { id name } } } } }`;
+            const res = await callMonday(query);
+            if (res.errors) { setStatus("err", "API hiba: " + res.errors[0].message); return; }
+            allItems = res.data.boards[0].groups[0].items_page.items;
+            setupDropdown("item", allItems, onItemSelect, true);
+            setStatus("ok", "✅ Kész! Nyomj a \"Létrehozás\" gombra.");
+        } catch(e) {
+            setStatus("err", "❌ Hiba: " + e.message);
+        }
+    }
+
+    function onItemSelect(item) {
+        selItem = item;
+    }
+
+    /* ── Generikus kereshető dropdown ── */
+    function setupDropdown(prefix, items, onSelect, optional) {
+        const input = document.getElementById(prefix + "Input");
+        const list  = document.getElementById(prefix + "List");
+        const clear = document.getElementById(prefix + "Clear");
+
+        input.disabled = false;
+        input.value = "";
+        if (optional) input.placeholder = "Keresés (opcionális)...";
+        else input.placeholder = "Keresés...";
+
+        let highlighted = -1;
+
+        function renderList(filter) {
+            const q = filter.toLowerCase().trim();
+            const filtered = items.filter(i => i.name.toLowerCase().includes(q));
+            list.innerHTML = "";
+            highlighted = -1;
+
+            if (optional) {
+                const none = document.createElement("div");
+                none.className = "dropdown-item";
+                none.textContent = "— Maradjon fő feladat —";
+                none.style.color = "#888";
+                none.addEventListener("mousedown", (e) => {
+                    e.preventDefault();
+                    selItem = null;
+                    input.value = "";
+                    clear.style.display = "none";
+                    list.classList.remove("open");
+                });
+                list.appendChild(none);
+            }
+
+            if (filtered.length === 0) {
+                const el = document.createElement("div");
+                el.className = "dropdown-item empty";
+                el.textContent = "Nincs találat";
+                list.appendChild(el);
+            } else {
+                filtered.forEach((item, idx) => {
+                    const el = document.createElement("div");
+                    el.className = "dropdown-item";
+                    el.textContent = item.name;
+                    el.dataset.idx = idx;
+                    el.addEventListener("mousedown", (e) => {
+                        e.preventDefault();
+                        selectItem(item);
+                    });
+                    list.appendChild(el);
+                });
+            }
+        }
+
+        function selectItem(item) {
+            input.value = item.name;
+            clear.style.display = "inline";
+            list.classList.remove("open");
+            onSelect(item);
+        }
+
+        function getItems() {
+            return Array.from(list.querySelectorAll(".dropdown-item:not(.empty)"))
+                .filter(el => !el.textContent.startsWith("—"));
+        }
+
+        input.addEventListener("focus", () => {
+            renderList(input.value);
+            list.classList.add("open");
+        });
+
+        input.addEventListener("input", () => {
+            renderList(input.value);
+            list.classList.add("open");
+        });
+
+        input.addEventListener("blur", () => {
+            setTimeout(() => list.classList.remove("open"), 150);
+        });
+
+        input.addEventListener("keydown", (e) => {
+            const visItems = getItems();
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                highlighted = Math.min(highlighted + 1, visItems.length - 1);
+                visItems.forEach((el, i) => el.classList.toggle("highlighted", i === highlighted));
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                highlighted = Math.max(highlighted - 1, 0);
+                visItems.forEach((el, i) => el.classList.toggle("highlighted", i === highlighted));
+            } else if (e.key === "Enter") {
+                e.preventDefault();
+                if (highlighted >= 0 && visItems[highlighted]) {
+                    visItems[highlighted].dispatchEvent(new MouseEvent("mousedown"));
+                }
+            } else if (e.key === "Escape") {
+                list.classList.remove("open");
             }
         });
 
-        function prepareEmailData() {
-            const item = Office.context.mailbox.item;
-            const encodedId = encodeURIComponent(item.itemId);
-            emailInfo = {
-                subject: item.subject,
-                link: `https://outlook.office.com/mail/deeplink?ItemID=${encodedId}`,
-                body: ""
-            };
-            item.body.getAsync(Office.CoercionType.Text, (result) => {
-                if (result.status === Office.AsyncResultStatus.Succeeded) {
-                    emailInfo.body = result.value;
-                }
-            });
-        }
-
-        async function fetchBoards() {
-            const status = document.getElementById('status');
-            try {
-                const query = '{ boards (limit: 50) { id name } }';
-                const res = await callMonday(query);
-                if (res.errors) {
-                    status.innerHTML = `<span class="err-msg">API Hiba: ${res.errors[0].message}</span>`;
-                    return;
-                }
-                const select = document.getElementById('boardSelect');
-                select.innerHTML = '<option value="">-- Válassz --</option>';
-                res.data.boards.forEach(b => select.innerHTML += `<option value="${b.id}">${b.name}</option>`);
-                status.innerHTML = "✅ Táblák betöltve.";
-            } catch (e) {
-                status.innerHTML = `<span class="err-msg">Hiba: ${e.message}</span>`;
+        clear.addEventListener("click", () => {
+            input.value = "";
+            clear.style.display = "none";
+            if (optional) { selItem = null; }
+            else {
+                if (prefix === "ws")    { selWorkspace = null; clearInput("board"); clearInput("group"); clearInput("item"); disableInput("board"); disableInput("group"); disableInput("item"); document.getElementById("mainBtn").disabled = true; }
+                if (prefix === "board") { selBoard = null; clearInput("group"); clearInput("item"); disableInput("group"); disableInput("item"); document.getElementById("mainBtn").disabled = true; }
+                if (prefix === "group") { selGroup = null; clearInput("item"); disableInput("item"); document.getElementById("mainBtn").disabled = true; }
             }
-        }
+            input.focus();
+        });
+    }
 
-        async function loadGroups() {
-            const boardId = document.getElementById('boardSelect').value;
-            if (!boardId) return;
-            const select = document.getElementById('groupSelect');
-            const itemSelect = document.getElementById('itemSelect');
-            select.innerHTML = '<option>Betöltés...</option>';
-            itemSelect.innerHTML = '<option value="">-- Maradjon fő feladat --</option>';
-            
-            const query = `{ boards (ids: ${boardId}) { groups { id title } } }`;
-            const res = await callMonday(query);
-            select.innerHTML = '<option value="">-- Válassz csoportot --</option>';
-            res.data.boards[0].groups.forEach(g => select.innerHTML += `<option value="${g.id}">${g.title}</option>`);
-        }
+    function clearInput(prefix) {
+        const input = document.getElementById(prefix + "Input");
+        const clear = document.getElementById(prefix + "Clear");
+        if (input) { input.value = ""; }
+        if (clear) { clear.style.display = "none"; }
+    }
 
-        async function loadItems() {
-            const boardId = document.getElementById('boardSelect').value;
-            const groupId = document.getElementById('groupSelect').value;
-            if (!boardId || !groupId) return;
+    function disableInput(prefix) {
+        const input = document.getElementById(prefix + "Input");
+        if (input) { input.disabled = true; input.placeholder = "Először válassz feljebb..."; }
+    }
 
-            const select = document.getElementById('itemSelect');
-            select.innerHTML = '<option value="">Elemek betöltése...</option>';
-
-            const query = `{ boards (ids: ${boardId}) { groups (ids: "${groupId}") { items_page { items { id name } } } } }`;
-            const res = await callMonday(query);
-            
-            select.innerHTML = '<option value="">-- Maradjon fő feladat --</option>';
-            const items = res.data.boards[0].groups[0].items_page.items;
-            items.forEach(item => {
-                select.innerHTML += `<option value="${item.id}">${item.name}</option>`;
-            });
-        }
-
-        async function sendToMonday() {
-            const btn = document.getElementById('mainBtn');
-            const status = document.getElementById('status');
-            const boardId = document.getElementById('boardSelect').value;
-            const groupId = document.getElementById('groupSelect').value;
-            const parentItemId = document.getElementById('itemSelect').value;
-
-            if(!boardId || !groupId) return alert("Válassz ki legalább egy projektet és egy csoportot!");
-
-            btn.disabled = true;
-            status.innerHTML = "⏳ Küldés folyamatban...";
-
-            try {
-                let createQuery;
-                if (parentItemId) {
-                    createQuery = `mutation { create_subitem (parent_item_id: ${parentItemId}, item_name: "${emailInfo.subject}") { id } }`;
-                } else {
-                    createQuery = `mutation { create_item (board_id: ${boardId}, group_id: "${groupId}", item_name: "${emailInfo.subject}") { id } }`;
-                }
-
-                const itemRes = await callMonday(createQuery);
-                const newItem = parentItemId ? itemRes.data.create_subitem : itemRes.data.create_item;
-                const itemId = newItem.id;
-
-                const shortBody = emailInfo.body.substring(0, 2500);
-                const fullUpdateText = `🔗 Email link: ${emailInfo.link}\n\n--- TARTALOM ---\n${shortBody}`;
-                
-                const updateQuery = `mutation { create_update (item_id: ${itemId}, body: ${JSON.stringify(fullUpdateText)}) { id } }`;
-                await callMonday(updateQuery);
-
-                status.innerHTML = "✅ Sikeresen átküldve!";
-            } catch (e) {
-                status.innerHTML = "❌ Hiba a küldéskor. (Lehet, hogy a csoport üres?)";
-                console.error(e);
+    /* ── Küldés ── */
+    async function sendToMonday() {
+        if (!selBoard || !selGroup) return alert("Válassz ki legalább egy boardot és csoportot!");
+        const btn = document.getElementById("mainBtn");
+        btn.disabled = true;
+        setStatus("info", "⏳ Küldés folyamatban...");
+        try {
+            let createQuery;
+            const safeName = (emailInfo.subject || "").replace(/"/g, '\\"').replace(/\n/g, " ");
+            if (selItem) {
+                createQuery = `mutation { create_subitem (parent_item_id: ${selItem.id}, item_name: "${safeName}") { id } }`;
+            } else {
+                createQuery = `mutation { create_item (board_id: ${selBoard.id}, group_id: "${selGroup.id}", item_name: "${safeName}") { id } }`;
             }
-            btn.disabled = false;
+            const itemRes = await callMonday(createQuery);
+            if (itemRes.errors) throw new Error(itemRes.errors[0].message);
+            const newItem = selItem ? itemRes.data.create_subitem : itemRes.data.create_item;
+            const itemId = newItem.id;
+            const shortBody = (emailInfo.body || "").substring(0, 2500);
+            const fullText = `🔗 Email link: ${emailInfo.link}\n\n--- TARTALOM ---\n${shortBody}`;
+            const updateQuery = `mutation { create_update (item_id: ${itemId}, body: ${JSON.stringify(fullText)}) { id } }`;
+            await callMonday(updateQuery);
+            setStatus("ok", "✅ Sikeresen átküldve!");
+        } catch(e) {
+            setStatus("err", "❌ Hiba: " + e.message);
+            console.error(e);
         }
+        btn.disabled = false;
+    }
 
-        async function callMonday(query) {
-            const r = await fetch("https://api.monday.com/v2", {
-                method: 'post',
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'Authorization': API_KEY 
-                },
-                body: JSON.stringify({ query })
-            });
-            if (!r.ok) throw new Error(`Szerver hiba: ${r.status}`);
-            return r.json();
-        }
-    </script>
+    async function callMonday(query) {
+        const r = await fetch("https://api.monday.com/v2", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": API_KEY },
+            body: JSON.stringify({ query })
+        });
+        if (!r.ok) throw new Error(`Szerver hiba: ${r.status}`);
+        return r.json();
+    }
+
+    function setStatus(type, msg) {
+        const el = document.getElementById("status");
+        el.innerHTML = `<span class="${type}">${msg}</span>`;
+    }
+</script>
 </body>
 </html>
